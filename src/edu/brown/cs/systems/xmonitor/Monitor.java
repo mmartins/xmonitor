@@ -1,17 +1,27 @@
 package edu.brown.cs.systems.xmonitor;
 
+import android.app.AndroidAppHelper;
 import android.media.AudioService;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Message;
 import android.os.Process;
+import android.util.Log;
 import com.android.internal.os.BatteryStatsImpl.Uid;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
+import static de.robv.android.xposed.XposedHelpers.findClass;
 import static de.robv.android.xposed.XposedHelpers.getObjectField;
 
 /**
@@ -215,6 +225,87 @@ public class Monitor implements IXposedHookLoadPackage {
                                 msg.arg1, msg.arg2));
                 }
             });
+        }
+    }
+
+    private static void hookAll(List<XHook> listHook) {
+        for (XHook hook : listHook)
+            hook(hook);
+    }
+
+    private static void hookAll(List<XHook> listHook,
+                                ClassLoader classLoader) {
+        for (XHook hook : listHook)
+            hook(hook, classLoader);
+    }
+
+    private static void hook(XHook hook) {
+        hook(hook, null);
+    }
+
+    private static void hook(final XHook hook, ClassLoader classLoader) {
+        try {
+            // Create hook method
+            XC_MethodHook methodHook = new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    try {
+                        if (Process.myUid() <= 0)
+                            return;
+                        hook.before(param);
+                    } catch (Throwable ex) {
+                        Log.e("XMonitor", ex.toString());
+                        ex.printStackTrace();
+                        throw ex;
+                    }
+                }
+
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    if (!param.hasThrowable())
+                        try {
+                            if (Process.myUid() <= 0)
+                                return;
+                            hook.after(param);
+                        } catch (Throwable ex) {
+                            Log.e("XMonitor", ex.toString());
+                            ex.printStackTrace();
+                            throw ex;
+                        }
+                }
+            };
+
+            // Find class
+            Class<?> hookClass = findClass(hook.getClassName(), classLoader);
+            if (hookClass == null) {
+                Log.w(
+                        hook.getClass().getSimpleName(),
+                        String.format("%s: class not found: %s", AndroidAppHelper.currentPackageName(),
+                                hook.getClassName()));
+                return;
+            }
+
+            // Add hook
+            Set<XC_MethodHook.Unhook> hookSet = new HashSet<XC_MethodHook.Unhook>();
+            if (hook.getMethodName() == null) {
+                for (Constructor<?> constructor : hookClass.getDeclaredConstructors())
+                    if (Modifier.isPublic(constructor.getModifiers()) ? hook.isVisible() : !hook.isVisible())
+                        hookSet.add(XposedBridge.hookMethod(constructor, methodHook));
+            } else
+                for (Method method : hookClass.getDeclaredMethods())
+                    if (method.getName().equals(hook.getMethodName())
+                            && (Modifier.isPublic(method.getModifiers()) ? hook.isVisible() : !hook.isVisible()))
+                        hookSet.add(XposedBridge.hookMethod(method, methodHook));
+
+            // Check if found
+            if (hookSet.isEmpty()) {
+                Log.w(
+                        String.format("XMonitor/%s", hook.getClass().getSimpleName()),
+                        String.format("%s: method not found: %s.%s", AndroidAppHelper.currentPackageName(),
+                                hookClass.getName(), hook.getMethodName()));
+            }
+        } catch (Throwable ex) {
+            Log.e("XMonitor", ex.toString());
         }
     }
 }
