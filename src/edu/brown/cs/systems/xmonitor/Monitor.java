@@ -1,13 +1,8 @@
 package edu.brown.cs.systems.xmonitor;
 
 import android.app.AndroidAppHelper;
-import android.media.AudioService;
-import android.media.MediaPlayer;
-import android.os.Binder;
-import android.os.Message;
 import android.os.Process;
 import android.util.Log;
-import com.android.internal.os.BatteryStatsImpl.Uid;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
@@ -16,14 +11,11 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
-import static de.robv.android.xposed.XposedHelpers.getObjectField;
 
 /**
  * Monitor for device usage inside Android Framework. Exports usage
@@ -113,12 +105,11 @@ public class Monitor implements IXposedHookLoadPackage, IXposedHookZygoteInit {
             Set<XC_MethodHook.Unhook> hookSet = new HashSet<XC_MethodHook.Unhook>();
             if (hook.getMethodName() == null) {
                 for (Constructor<?> constructor : hookClass.getDeclaredConstructors())
-                    if (Modifier.isPublic(constructor.getModifiers()) ? hook.isVisible() : !hook.isVisible())
-                        hookSet.add(XposedBridge.hookMethod(constructor, methodHook));
+                    hookSet.add(XposedBridge.hookMethod(constructor,
+                            methodHook));
             } else
                 for (Method method : hookClass.getDeclaredMethods())
-                    if (method.getName().equals(hook.getMethodName())
-                            && (Modifier.isPublic(method.getModifiers()) ? hook.isVisible() : !hook.isVisible()))
+                    if (method.getName().equals(hook.getMethodName()))
                         hookSet.add(XposedBridge.hookMethod(method, methodHook));
 
             // Check if found
@@ -132,6 +123,4 @@ public class Monitor implements IXposedHookLoadPackage, IXposedHookZygoteInit {
             Log.e("XMonitor", ex.toString());
         }
     }
-
-
 }
