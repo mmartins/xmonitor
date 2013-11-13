@@ -36,12 +36,13 @@ public class XAudioService extends XHook {
     protected void before(XC_MethodHook.MethodHookParam param) throws Throwable {
         String methodName = param.method.getName();
 
-        if (methodName.equals("playSoundEffect")) {
-            XposedBridge.log(String.format("SystemMediaCall: %d",
-                    Binder.getCallingUid()));
-        } else if (methodName.equals("playSoundEffectVolume")) {
-            XposedBridge.log(String.format("SystemMediaCall: %d",
-                    Binder.getCallingUid()));
+        if (methodName.equals("playSoundEffect") || methodName.equals
+                ("playSoundEffectVolume")) {
+            int uid = Binder.getCallingUid();
+            XposedBridge.log(String.format("SystemMediaCall: %d", uid));
+            // Signature: (event-type, uid)
+            Utils.getInstance().shareEvent(null, Events.SYSTEM_MEDIA_CALL,
+                    uid);
         } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);

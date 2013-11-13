@@ -47,26 +47,48 @@ public class XBatteryStatsImplUid extends XHook{
 
         if (methodName.equals("noteStartWakeLocked")) {
             Uid uid = (Uid) param.thisObject;
-            XposedBridge.log(String.format("StartWakeLock: %d, %s, %d",
-                    uid.getUid(), param.args[1], param.args[2]));
+            int type = (Integer) param.args[2];
+            String name = (String) param.args[1];
+            XposedBridge.log(String.format("StartWakeLock: %d, %d. %s",
+                    uid.getUid(), type, name));
+            // Signature: (event-type, uid, type, wakelock_name)
+            Utils.getInstance().shareEvent(name, Events.START_WAKELOCK,
+                    uid.getUid(), type);
         } else if (methodName.equals("noteStopWakeLocked")) {
             Uid uid = (Uid) param.thisObject;
-            XposedBridge.log(String.format("StopWakedLock: %d, %s, %d",
-                    uid.getUid(), param.args[1], param.args[2]));
+            int type = (Integer) param.args[2];
+            String name = (String) param.args[1];
+            XposedBridge.log(String.format("StopWakedLock: %d, %d, %s",
+                    uid.getUid(), type, name));
+            // Signature: (event-type, uid, wakelock_name)
+            Utils.getInstance().shareEvent(name, Events.STOP_WAKELOCK,
+                    uid.getUid(), type);
         } else if (methodName.equals("noteStartSensor")) {
             Uid uid = (Uid) param.thisObject;
             XposedBridge.log(String.format("StartSensor: %d, %d",
                     uid.getUid(), param.args[0]));
+            // Signature: (event-type, uid, sensor)
+            Utils.getInstance().shareEvent(null, Events.START_SENSOR,
+                    uid.getUid(), (Integer) param.args[0]);
         } else if (methodName.equals("noteStopSensor")) {
             Uid uid = (Uid) param.thisObject;
             XposedBridge.log(String.format("StopSensor: %d, %d",
                     uid.getUid(), param.args[0]));
+            // Signature: (event-type, uid, sensor)
+            Utils.getInstance().shareEvent(null, Events.STOP_SENSOR,
+                    uid.getUid(), (Integer) param.args[0]);
         } else if (methodName.equals("noteStartGps")) {
             Uid uid = (Uid) param.thisObject;
             XposedBridge.log(String.format("StartGps: %d", uid.getUid()));
+            // Signature: (event-type, uid)
+            Utils.getInstance().shareEvent(null, Events.START_GPS,
+                    uid.getUid());
         } else if (methodName.equals("noteStopGps")) {
             Uid uid = (Uid) param.thisObject;
             XposedBridge.log(String.format("StopGps: %d", uid.getUid()));
+            // Signature: (event-type, uid)
+            Utils.getInstance().shareEvent(null, Events.STOP_GPS,
+                    uid.getUid());
         } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);

@@ -44,13 +44,24 @@ public class XMediaPlayerEventHandler extends XHook {
                     .thisObject, "mMediaPlayer");
 
             // MEDIA_PLAYBACK_COMPLETE
-            if (msg.what == 2)
-                XposedBridge.log(String.format("StopMedia: %d, %d",
-                                Process.myUid(), player.hashCode()));
-            else if (msg.what == 5) // MEDIA_SET_VIDEO_SIZE
+            if (msg.what == 2) {
+                int uid = Process.myUid();
+                int id = player.hashCode();
+                XposedBridge.log(String.format("StopMedia: %d, %d", uid, id));
+                // Signature: (event-type, uid, id)
+                Utils.getInstance().shareEvent(null, Events.STOP_MEDIA, uid,
+                        id);
+            } else if (msg.what == 5) {// MEDIA_SET_VIDEO_SIZE
+                int uid = Process.myUid();
+                int id = player.hashCode();
+                int width = msg.arg1;
+                int height = msg.arg2;
                 XposedBridge.log(String.format("VideoSize: %d, %d, " +
-                                "%d, %d", Process.myPid(), player.hashCode(),
-                                msg.arg1, msg.arg2));
+                                "%d, %d", uid, id, width, height));
+                // Signature: (event-type, uid, id, width, height)
+                Utils.getInstance().shareEvent(null, Events.VIDEO_SIZE, uid,
+                        id, width, height);
+            }
          } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);

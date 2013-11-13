@@ -1,7 +1,5 @@
 package edu.brown.cs.systems.xmonitor;
 
-import android.media.AudioService;
-import android.media.MediaPlayer;
 import android.os.Process;
 import android.util.Log;
 import de.robv.android.xposed.XC_MethodHook;
@@ -43,21 +41,20 @@ public class XMediaPlayer extends XHook {
         String methodName = param.method.getName();
 
         if (methodName.equals("start")) {
-            XposedBridge.log(String.format("StartMedia: %d, %d",
-                    Process.myUid(), param.thisObject.hashCode()));
-        } else if (methodName.equals("stop")) {
-            XposedBridge.log(String.format("StopMedia: %d. %d",
-                    Process.myUid(), param.thisObject.hashCode()));
-        } else if (methodName.equals("release")) {
-            XposedBridge.log(String.format("StopMedia: %d. %d",
-                    Process.myUid(), param.thisObject.hashCode()));
-         } else if (methodName.equals("reset")) {
-            XposedBridge.log(String.format("StopMedia: %d. %d",
-                    Process.myUid(), param.thisObject.hashCode()));
-         } else if (methodName.equals("finalize")) {
-            XposedBridge.log(String.format("StopMedia: %d. %d",
-                    Process.myUid(), param.thisObject.hashCode()));
-         } else
+            int uid = Process.myUid();
+            int id = param.thisObject.hashCode();
+            XposedBridge.log(String.format("StartMedia: %d, %d", uid, id));
+            // Signature: (event-type, uid, id)
+            Utils.getInstance().shareEvent(null, Events.START_MEDIA, uid, id);
+        } else if (methodName.equals("stop") || methodName.equals("release")
+                || methodName.equals("reset") || methodName.equals
+                ("finalize")) {
+            int uid = Process.myUid();
+            int id = param.thisObject.hashCode();
+            XposedBridge.log(String.format("StopMedia: %d. %d", uid, id));
+            // Signature: (event-type, uid, id)
+            Utils.getInstance().shareEvent(null, Events.STOP_MEDIA, uid, id);
+        } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);
     }

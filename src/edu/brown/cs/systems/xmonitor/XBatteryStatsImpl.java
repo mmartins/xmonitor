@@ -39,8 +39,12 @@ public class XBatteryStatsImpl extends XHook {
         String methodName = param.method.getName();
 
         if (methodName.equals("noteScreenBrightnessLocked")) {
+            int brightness = (Integer) param.args[0];
             XposedBridge.log(String.format("ScreenBrightness: %d",
-                    param.args[0]));
+                    brightness));
+            // Signature: (event-type, brightness)
+            Utils.getInstance().shareEvent(null, Events.SCREEN_BRIGHTNESS,
+                    brightness);
         } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);

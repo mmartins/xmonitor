@@ -40,8 +40,11 @@ public class XNotificationManager extends XHook {
         String methodName = param.method.getName();
 
         if (methodName.equals("notify")) {
-            XposedBridge.log(String.format("SystemMediaCall: %d",
-                    Process.myUid()));
+            int uid = Process.myUid();
+            XposedBridge.log(String.format("SystemMediaCall: %d", uid));
+            // Signature: (event-type, uid)
+            Utils.getInstance().shareEvent(null, Events.SYSTEM_MEDIA_CALL,
+                    uid);
         } else
             Log.w(String.format("XMonitor/%s", this.getClass().getSimpleName
                     ()), "Unknown method=" + methodName);
