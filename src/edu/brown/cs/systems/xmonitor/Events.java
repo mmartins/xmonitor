@@ -42,4 +42,5 @@ public class Events {
     static final int VIDEO_OFF = 34;
     static final int AUDIO_ON = 35;
     static final int AUDIO_OFF = 36;
+    static final int GPS_STATUS = 37;
 }
