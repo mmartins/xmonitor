@@ -31,6 +31,7 @@ public class Monitor implements IXposedHookLoadPackage, IXposedHookZygoteInit {
         Log.i("XMonitor", String.format("load %s", startupParam.modulePath));
 
         hookAll(XNotificationManager.getInstances());
+        hookAll(XGpsLocationProvider.getInstances());
         hookAll(XBatteryStatsImpl.getInstances());
         hookAll(XBatteryStatsImplUid.getInstances());
         hookAll(XAudioService.getInstances());
